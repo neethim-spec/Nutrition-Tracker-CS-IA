@@ -1,0 +1,120 @@
+CREATE DATABASE nutrition_tracker;
+
+CREATE TABLE Users (
+    userID INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    age INT NOT NULL,
+    gender VARCHAR(20) NOT NULL,
+    height FLOAT NOT NULL,
+    weight FLOAT NOT NULL
+);
+
+CREATE TABLE Foods (
+    foodID INT AUTO_INCREMENT PRIMARY KEY,
+    foodName VARCHAR(100) NOT NULL,
+    category VARCHAR(50) NOT NULL,
+    servingSize FLOAT NOT NULL,
+    servingUnit VARCHAR(10) NOT NULL
+);
+
+CREATE TABLE Nutrient (
+    nutrientID INT AUTO_INCREMENT PRIMARY KEY,
+    nutrientName VARCHAR(100) NOT NULL UNIQUE,
+    unit VARCHAR(10) NOT NULL,
+    recommendedAmount FLOAT NOT NULL CHECK (recommendedAmount > 0),
+    upperLimit FLOAT NULL
+);
+
+-- Added to support Nutrient.getRecommendedAmount(age, gender).
+-- If no row matches, Nutrient.recommendedAmount is used instead.
+CREATE TABLE NutrientRecommendation (
+    recommendationID INT AUTO_INCREMENT PRIMARY KEY,
+    nutrientID INT NOT NULL,
+    gender VARCHAR(20) NOT NULL,
+    minAge INT NOT NULL,
+    maxAge INT NOT NULL,
+    amount FLOAT NOT NULL CHECK (amount > 0),
+    FOREIGN KEY (nutrientID) REFERENCES Nutrient(nutrientID) ON DELETE CASCADE
+);
+
+CREATE TABLE FoodNutrient (
+    foodNutrientID INT AUTO_INCREMENT PRIMARY KEY,
+    foodID INT NOT NULL,
+    nutrientID INT NOT NULL,
+    amountPer100g FLOAT NOT NULL,
+    unit VARCHAR(10) NOT NULL,
+    UNIQUE (foodID, nutrientID),
+    FOREIGN KEY (foodID) REFERENCES Foods(foodID) ON DELETE CASCADE,
+    FOREIGN KEY (nutrientID) REFERENCES Nutrient(nutrientID) ON DELETE CASCADE
+);
+
+CREATE TABLE IntakeRecords (
+    recordID INT AUTO_INCREMENT PRIMARY KEY,
+    userID INT NOT NULL,
+    foodID INT NOT NULL,
+    quantity FLOAT NOT NULL,
+    unit VARCHAR(10) NOT NULL,
+    intakeDate DATE NOT NULL,
+    mealType VARCHAR(20) NOT NULL,
+    FOREIGN KEY (userID) REFERENCES Users(userID) ON DELETE CASCADE,
+    FOREIGN KEY (foodID) REFERENCES Foods(foodID)
+);
+
+CREATE TABLE DailyNutrientSummary (
+    summaryID INT AUTO_INCREMENT PRIMARY KEY,
+    userID INT NOT NULL,
+    nutrientID INT NOT NULL,
+    intakeDate DATE NOT NULL,
+    intakeAmount FLOAT NOT NULL,
+    percentage FLOAT NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    UNIQUE (userID, nutrientID, intakeDate),
+    FOREIGN KEY (userID) REFERENCES Users(userID) ON DELETE CASCADE,
+    FOREIGN KEY (nutrientID) REFERENCES Nutrient(nutrientID) ON DELETE CASCADE
+);
+
+CREATE TABLE Report (
+    reportID INT AUTO_INCREMENT PRIMARY KEY,
+    userID INT NOT NULL,
+    startDate DATE NOT NULL,
+    endDate DATE NOT NULL,
+    FOREIGN KEY (userID) REFERENCES Users(userID) ON DELETE CASCADE
+);
+
+INSERT INTO Nutrient (nutrientID, nutrientName, unit, recommendedAmount, upperLimit) VALUES
+(1, 'Protein', 'g', 50, NULL),
+(2, 'Fibre', 'g', 30, NULL),
+(3, 'Calcium', 'mg', 1000, 2500),
+(4, 'Iron', 'mg', 18, 45),
+(5, 'Vitamin C', 'mg', 90, 2000),
+(6, 'Vitamin A', 'mcg', 900, 3000);
+
+INSERT INTO NutrientRecommendation (nutrientID, gender, minAge, maxAge, amount) VALUES
+(1, 'Male', 14, 18, 52), (1, 'Female', 14, 18, 46), (1, 'Male', 19, 50, 56), (1, 'Female', 19, 50, 46),
+(2, 'Male', 14, 18, 38), (2, 'Female', 14, 18, 26), (2, 'Male', 19, 50, 38), (2, 'Female', 19, 50, 25),
+(3, 'Male', 14, 18, 1300), (3, 'Female', 14, 18, 1300), (3, 'Male', 19, 50, 1000), (3, 'Female', 19, 50, 1000),
+(4, 'Male', 14, 18, 11), (4, 'Female', 14, 18, 15), (4, 'Male', 19, 50, 8), (4, 'Female', 19, 50, 18),
+(5, 'Male', 14, 18, 75), (5, 'Female', 14, 18, 65), (5, 'Male', 19, 50, 90), (5, 'Female', 19, 50, 75),
+(6, 'Male', 14, 18, 900), (6, 'Female', 14, 18, 700), (6, 'Male', 19, 50, 900), (6, 'Female', 19, 50, 700);
+
+INSERT INTO Foods (foodID, foodName, category, servingSize, servingUnit) VALUES
+(1, 'White rice, cooked', 'Grains', 150, 'g'),
+(2, 'Lentils, cooked', 'Legumes', 150, 'g'),
+(3, 'Whole milk', 'Dairy', 250, 'ml'),
+(4, 'Egg, boiled', 'Protein', 50, 'g'),
+(5, 'Chicken breast, cooked', 'Protein', 100, 'g'),
+(6, 'Spinach, raw', 'Vegetables', 50, 'g'),
+(7, 'Orange', 'Fruit', 130, 'g'),
+(8, 'Banana', 'Fruit', 120, 'g');
+
+INSERT INTO FoodNutrient (foodID, nutrientID, amountPer100g, unit) VALUES
+(1, 1, 2.7, 'g'), (1, 2, 0.4, 'g'), (1, 3, 10, 'mg'), (1, 4, 0.2, 'mg'), (1, 5, 0, 'mg'), (1, 6, 0, 'mcg'),
+(2, 1, 9, 'g'), (2, 2, 7.9, 'g'), (2, 3, 19, 'mg'), (2, 4, 3.3, 'mg'), (2, 5, 1.5, 'mg'), (2, 6, 0, 'mcg'),
+(3, 1, 3.2, 'g'), (3, 2, 0, 'g'), (3, 3, 113, 'mg'), (3, 4, 0, 'mg'), (3, 5, 0, 'mg'), (3, 6, 46, 'mcg'),
+(4, 1, 12.6, 'g'), (4, 2, 0, 'g'), (4, 3, 50, 'mg'), (4, 4, 1.2, 'mg'), (4, 5, 0, 'mg'), (4, 6, 149, 'mcg'),
+(5, 1, 31, 'g'), (5, 2, 0, 'g'), (5, 3, 15, 'mg'), (5, 4, 1, 'mg'), (5, 5, 0, 'mg'), (5, 6, 6, 'mcg'),
+(6, 1, 2.9, 'g'), (6, 2, 2.2, 'g'), (6, 3, 99, 'mg'), (6, 4, 2.7, 'mg'), (6, 5, 28, 'mg'), (6, 6, 469, 'mcg'),
+(7, 1, 0.9, 'g'), (7, 2, 2.4, 'g'), (7, 3, 40, 'mg'), (7, 4, 0.1, 'mg'), (7, 5, 53, 'mg'), (7, 6, 11, 'mcg'),
+(8, 1, 1.1, 'g'), (8, 2, 2.6, 'g'), (8, 3, 5, 'mg'), (8, 4, 0.3, 'mg'), (8, 5, 8.7, 'mg'), (8, 6, 3, 'mcg');
